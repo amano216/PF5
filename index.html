@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>禅 × 宇宙</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Kaisei+Tokumin:wght@400&family=Space+Grotesk:wght@300&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Yuji Syuku', serif;
+            font-weight: 400;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        
+        .zen-title {
+            font-family: 'Yuji Syuku', serif;
+            font-size: clamp(8rem, 25vw, 20rem);
+            font-weight: 400;
+            letter-spacing: -0.5rem;
+            line-height: 0.8;
+            opacity: 0;
+            transform: scale(0) rotate(45deg);
+            animation: zenReveal 2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            color: rgba(255, 255, 255, 0.15);
+            text-shadow: 
+                0 0 80px rgba(255, 255, 255, 0.5),
+                0 0 120px rgba(255, 255, 255, 0.3),
+                0 0 200px rgba(255, 255, 255, 0.1);
+            position: relative;
+            filter: blur(0.5px);
+        }
+        
+        @keyframes zenReveal {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(45deg);
+                filter: blur(20px);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(1.1) rotate(-5deg);
+                filter: blur(2px);
+            }
+            100% {
+                opacity: 0.2;
+                transform: scale(1) rotate(0deg);
+                filter: blur(0.5px);
+            }
+        }
+        
+        .zen-title::after {
+            content: '禅';
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            animation: zenEcho 4s ease-out 2s infinite;
+            filter: blur(1px);
+        }
+        
+        @keyframes zenEcho {
+            0% {
+                opacity: 0;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.1;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+        
+        .subtitle {
+            position: absolute;
+            bottom: 10vh;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.3rem;
+            opacity: 0;
+            animation: fadeIn 2s ease-out 2s forwards;
+            text-transform: uppercase;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 0.7; }
+        }
+        
+        .pulse {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #fff;
+            animation: pulse 2s ease-out;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(100);
+                opacity: 0;
+            }
+        }
+        
+        .navigation {
+            position: fixed;
+            top: 5vh;
+            right: 5vw;
+            z-index: 20;
+            display: flex;
+            gap: 2rem;
+            mix-blend-mode: difference;
+        }
+        
+        .nav-item {
+            font-size: 0.7rem;
+            letter-spacing: 0.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: all;
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 5px 10px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="navigation">
+        <div class="nav-item" data-view="galaxy">銀河</div>
+        <div class="nav-item" data-view="void">虚空</div>
+        <div class="nav-item" data-view="infinity">無限</div>
+    </div>
+    
+    <div class="content">
+        <h1 class="zen-title">禅</h1>
+        <p class="subtitle">Cosmic Consciousness</p>
+    </div>
+    
+    <script>
+        // Three.js Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas: document.getElementById('canvas'),
+            antialias: true,
+            alpha: true 
+        });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
+        // Galaxy Parameters
+        const parameters = {
+            count: 100000,
+            size: 0.01,
+            radius: 5,
+            branches: 5,
+            spin: 1,
+            randomness: 0.2,
+            randomnessPower: 3,
+            insideColor: '#ff6030',
+            outsideColor: '#1b3984'
+        };
+        
+        let geometry = null;
+        let material = null;
+        let points = null;
+        
+        const generateGalaxy = () => {
+            // Destroy old galaxy
+            if (points !== null) {
+                geometry.dispose();
+                material.dispose();
+                scene.remove(points);
+            }
+            
+            // Geometry
+            geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(parameters.count * 3);
+            const colors = new Float32Array(parameters.count * 3);
+            
+            const colorInside = new THREE.Color(parameters.insideColor);
+            const colorOutside = new THREE.Color(parameters.outsideColor);
+            
+            for (let i = 0; i < parameters.count; i++) {
+                const i3 = i * 3;
+                
+                // Position
+                const radius = Math.random() * parameters.radius;
+                const spinAngle = radius * parameters.spin;
+                const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2;
+                
+                const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                
+                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+                positions[i3 + 1] = randomY;
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+                
+                // Color
+                const mixedColor = colorInside.clone();
+                mixedColor.lerp(colorOutside, radius / parameters.radius);
+                
+                colors[i3] = mixedColor.r;
+                colors[i3 + 1] = mixedColor.g;
+                colors[i3 + 2] = mixedColor.b;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            // Material
+            material = new THREE.PointsMaterial({
+                size: parameters.size,
+                sizeAttenuation: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                vertexColors: true
+            });
+            
+            // Points
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+        };
+        
+        generateGalaxy();
+        
+        // Camera position
+        camera.position.x = 3;
+        camera.position.y = 3;
+        camera.position.z = 3;
+        camera.lookAt(scene.position);
+        
+        // Mouse interaction
+        const mouse = { x: 0, y: 0 };
+        
+        document.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+        
+        // Click effect
+        document.addEventListener('click', (event) => {
+            const pulse = document.createElement('div');
+            pulse.className = 'pulse';
+            pulse.style.left = event.clientX + 'px';
+            pulse.style.top = event.clientY + 'px';
+            document.body.appendChild(pulse);
+            
+            setTimeout(() => pulse.remove(), 2000);
+            
+            // Galaxy burst
+            gsap.to(points.rotation, {
+                y: points.rotation.y + Math.PI * 2,
+                duration: 2,
+                ease: "power2.inOut"
+            });
+        });
+        
+        // View changes
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const view = e.target.dataset.view;
+                
+                switch(view) {
+                    case 'galaxy':
+                        gsap.to(camera.position, {
+                            x: 3, y: 3, z: 3,
+                            duration: 2,
+                            ease: "power2.inOut"
+                        });
+                        break;
+                    case 'void':
+                        gsap.to(camera.position, {
+                            x: 0, y: 0, z: 8,
+                            duration: 2,
+                            ease: "power2.inOut"
+                        });
+                        break;
+                    case 'infinity':
+                        gsap.to(camera.position, {
+                            x: 0, y: 5, z: 0,
+                            duration: 2,
+                            ease: "power2.inOut"
+                        });
+                        break;
+                }
+            });
+        });
+        
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        const animate = () => {
+            const elapsedTime = clock.getElapsedTime();
+            
+            // Rotate galaxy
+            points.rotation.y = elapsedTime * 0.05;
+            
+            // Camera float
+            camera.position.x += Math.sin(elapsedTime * 0.5) * 0.001;
+            camera.position.y += Math.cos(elapsedTime * 0.3) * 0.001;
+            
+            // Mouse influence
+            camera.position.x += mouse.x * 0.05;
+            camera.position.y += mouse.y * 0.05;
+            camera.lookAt(scene.position);
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        };
+        
+        animate();
+        
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Zen mode toggle
+        let zenMode = false;
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'z') {
+                zenMode = !zenMode;
+                if (zenMode) {
+                    gsap.to('.navigation', { opacity: 0, duration: 1 });
+                    gsap.to('.subtitle', { opacity: 0, duration: 1 });
+                    gsap.to(parameters, {
+                        size: 0.005,
+                        duration: 3,
+                        onUpdate: () => generateGalaxy()
+                    });
+                } else {
+                    gsap.to('.navigation', { opacity: 1, duration: 1 });
+                    gsap.to('.subtitle', { opacity: 0.7, duration: 1 });
+                    gsap.to(parameters, {
+                        size: 0.01,
+                        duration: 3,
+                        onUpdate: () => generateGalaxy()
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
